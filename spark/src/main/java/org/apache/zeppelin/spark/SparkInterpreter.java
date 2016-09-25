@@ -101,6 +101,8 @@ public class SparkInterpreter extends Interpreter {
   private static SparkEnv env;
   private static Object sparkSession;    // spark 2.x
   private static JobProgressListener sparkListener;
+  private static String appUIAddress;
+  private static SparkJobTable jobTable;
   private static AbstractFile classOutputDir;
   private static Integer sharedInterpreterLock = new Integer(0);
   private static AtomicInteger numReferenceOfSparkContext = new AtomicInteger(0);
@@ -129,6 +131,8 @@ public class SparkInterpreter extends Interpreter {
 
     this.sc = sc;
     env = SparkEnv.get();
+    setSparkUIAddress(this.sc);
+    jobTable = new SparkJobTable(appUIAddress);
     sparkListener = setupListeners(this.sc);
   }
 
@@ -137,6 +141,8 @@ public class SparkInterpreter extends Interpreter {
       if (sc == null) {
         sc = createSparkContext();
         env = SparkEnv.get();
+        setSparkUIAddress(this.sc);
+        jobTable = new SparkJobTable(appUIAddress);
         sparkListener = setupListeners(sc);
       }
       return sc;
@@ -177,6 +183,11 @@ public class SparkInterpreter extends Interpreter {
 
       if (addListenerMethod != null) {
         addListenerMethod.invoke(listenerBus, pl);
+        if (jobTable != null) {
+          addListenerMethod.invoke(listenerBus, jobTable);
+        } else {
+          logger.warn("Could not add job table as null");
+        }
       } else {
         return null;
       }
@@ -444,6 +455,16 @@ public class SparkInterpreter extends Interpreter {
     setupConfForSparkR(conf);
     SparkContext sparkContext = new SparkContext(conf);
     return sparkContext;
+  }
+
+  private void setSparkUIAddress(SparkContext sc) {
+    appUIAddress = null;
+    if (sc == null || sc.ui().isEmpty()) {
+      logger.info("Could not extract Spark UI address from Spark context {}", sc);
+    } else {
+      appUIAddress = sc.ui().get().appUIAddress();
+      logger.info("Spark UI is available on {}", appUIAddress);
+    }
   }
 
   private void setupConfForPySpark(SparkConf conf) {
@@ -1072,9 +1093,12 @@ public class SparkInterpreter extends Interpreter {
   public InterpreterResult interpret(String[] lines, InterpreterContext context) {
     synchronized (this) {
       z.setGui(context.getGui());
-      sc.setJobGroup(getJobGroup(context), "Zeppelin", false);
+      String jobGroup = getJobGroup(context);
+      sc.setJobGroup(jobGroup, "Zeppelin", false);
+      jobTable.reset(jobGroup);
       InterpreterResult r = interpretInput(lines, context);
       sc.clearJobGroup();
+      logger.info("Job information for result: {}", jobTable.get(jobGroup));
       return r;
     }
   }
@@ -1309,6 +1333,11 @@ public class SparkInterpreter extends Interpreter {
       }
       sparkSession = null;
       sc = null;
+      appUIAddress = null;
+      if (jobTable != null) {
+        jobTable.reset();
+        jobTable = null;
+      }
       if (classServer != null) {
         Utils.invokeMethod(classServer, "stop");
         classServer = null;
