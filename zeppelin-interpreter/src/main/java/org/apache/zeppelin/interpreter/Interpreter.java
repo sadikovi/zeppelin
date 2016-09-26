@@ -28,6 +28,7 @@ import java.util.Properties;
 import com.google.gson.annotations.SerializedName;
 import org.apache.zeppelin.annotation.ZeppelinApi;
 import org.apache.zeppelin.interpreter.thrift.InterpreterCompletion;
+import org.apache.zeppelin.interpreter.thrift.InterpreterProgressInfo;
 import org.apache.zeppelin.scheduler.Scheduler;
 import org.apache.zeppelin.scheduler.SchedulerFactory;
 import org.slf4j.Logger;
@@ -97,6 +98,17 @@ public abstract class Interpreter {
    */
   @ZeppelinApi
   public abstract int getProgress(InterpreterContext context);
+
+  /**
+   * Return rich information about progress.
+   *
+   * @param context
+   * @return progress information list, return empty list or null if there is nothing to report
+   */
+  @ZeppelinApi
+  public List<InterpreterProgressInfo> getProgressInfo(InterpreterContext context) {
+    return null;
+  }
 
   /**
    * Get completion list based on cursor position.

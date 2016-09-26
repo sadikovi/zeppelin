@@ -404,6 +404,14 @@ public class RemoteInterpreterServer
     return intp.getProgress(convert(interpreterContext));
   }
 
+  @Override
+  public List<InterpreterProgressInfo> getProgressInfo(String noteId, String className,
+      RemoteInterpreterContext interpreterContext)
+      throws TException {
+    Interpreter intp = getInterpreter(noteId, className);
+    return intp.getProgressInfo(convert(interpreterContext));
+  }
+
 
   @Override
   public String getFormType(String noteId, String className) throws TException {
