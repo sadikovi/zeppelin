@@ -19,11 +19,7 @@ package org.apache.zeppelin.interpreter;
 
 
 import java.net.URL;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import com.google.gson.annotations.SerializedName;
 import org.apache.zeppelin.annotation.ZeppelinApi;
@@ -107,7 +103,7 @@ public abstract class Interpreter {
    */
   @ZeppelinApi
   public List<InterpreterProgressInfo> getProgressInfo(InterpreterContext context) {
-    return null;
+    return new ArrayList<>();
   }
 
   /**

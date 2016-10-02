@@ -31,6 +31,7 @@ import org.apache.thrift.transport.TTransportException;
 import org.apache.zeppelin.display.AngularObject;
 import org.apache.zeppelin.display.AngularObjectRegistry;
 import org.apache.zeppelin.interpreter.remote.mock.MockInterpreterEnv;
+import org.apache.zeppelin.interpreter.thrift.InterpreterProgressInfo;
 import org.apache.zeppelin.interpreter.thrift.RemoteInterpreterService;
 import org.apache.zeppelin.interpreter.thrift.RemoteInterpreterService.Client;
 import org.apache.zeppelin.user.AuthenticationInfo;
@@ -290,6 +291,11 @@ public class RemoteInterpreterTest {
       }
 
       @Override
+      public List<InterpreterProgressInfo> progressInfo() {
+        return null;
+      }
+
+      @Override
       public Map<String, Object> info() {
         return null;
       }
@@ -323,6 +329,11 @@ public class RemoteInterpreterTest {
       @Override
       public int progress() {
         return 0;
+      }
+
+      @Override
+      public List<InterpreterProgressInfo> progressInfo() {
+        return null;
       }
 
       @Override
@@ -390,6 +401,11 @@ public class RemoteInterpreterTest {
         @Override
         public int progress() {
           return 0;
+        }
+
+        @Override
+        public List<InterpreterProgressInfo> progressInfo() {
+          return null;
         }
 
         @Override
@@ -469,6 +485,11 @@ public class RemoteInterpreterTest {
         @Override
         public int progress() {
           return 0;
+        }
+
+        @Override
+        public List<InterpreterProgressInfo> progressInfo() {
+          return null;
         }
 
         @Override
@@ -571,6 +592,11 @@ public class RemoteInterpreterTest {
       @Override
       public int progress() {
         return 0;
+      }
+
+      @Override
+      public List<InterpreterProgressInfo> progressInfo() {
+        return null;
       }
 
       @Override

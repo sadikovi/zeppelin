@@ -18,12 +18,15 @@
 package org.apache.zeppelin.scheduler;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.zeppelin.scheduler.Job;
 import org.apache.zeppelin.scheduler.JobListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.zeppelin.interpreter.thrift.InterpreterProgressInfo;
 
 public class SleepingJob extends Job{
 
@@ -68,6 +71,11 @@ public class SleepingJob extends Job{
 		if(p>100) p = 100;
 		return (int) p;
 	}
+
+  @Override
+  public List<InterpreterProgressInfo> progressInfo() {
+    return null;
+  }
 
 	@Override
   public Map<String, Object> info() {

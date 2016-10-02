@@ -327,6 +327,11 @@ public class RemoteInterpreterServer
     }
 
     @Override
+    public List<InterpreterProgressInfo> progressInfo() {
+      return new ArrayList<>();
+    }
+
+    @Override
     public Map<String, Object> info() {
       if (infos == null) {
         infos = new HashMap<>();

@@ -38,6 +38,7 @@ import org.apache.zeppelin.display.AngularObjectRegistryListener;
 import org.apache.zeppelin.interpreter.InterpreterGroup;
 import org.apache.zeppelin.interpreter.remote.RemoteAngularObjectRegistry;
 import org.apache.zeppelin.interpreter.thrift.InterpreterCompletion;
+import org.apache.zeppelin.interpreter.thrift.InterpreterProgressInfo;
 import org.apache.zeppelin.user.AuthenticationInfo;
 import org.apache.zeppelin.interpreter.InterpreterOutput;
 import org.apache.zeppelin.interpreter.InterpreterResult;
@@ -112,7 +113,7 @@ public class NotebookServer extends WebSocketServlet implements
       if (LOG.isTraceEnabled()) {
         LOG.trace("RECEIVE MSG = " + messagereceived);
       }
-      
+
       String ticket = TicketContainer.instance.getTicket(messagereceived.principal);
       if (ticket != null && !ticket.equals(messagereceived.ticket)){
         /* not to pollute logs, log instead of exception */
@@ -530,6 +531,7 @@ public class NotebookServer extends WebSocketServlet implements
 
     return cronUpdated;
   }
+
   private void createNote(NotebookSocket conn, HashSet<String> userAndRoles,
                           Notebook notebook, Message message)
       throws IOException {
@@ -1126,12 +1128,19 @@ public class NotebookServer extends WebSocketServlet implements
       this.note = note;
     }
 
-    @Override
-    public void onProgressUpdate(Job job, int progress) {
+    private void sendProgressInfo(Job job) {
+      LOG.warn("Progress for {}, progress={}, info={}", job.getClass().getName(),
+        job.progress(), job.progressInfo());
       notebookServer.broadcast(
           note.id(),
-          new Message(OP.PROGRESS).put("id", job.getId()).put("progress",
-              job.progress()));
+          new Message(OP.PROGRESS).put("id", job.getId()).
+            put("progress", job.progress()).
+            put("info", job.progressInfo()));
+    }
+
+    @Override
+    public void onProgressUpdate(Job job, int progress) {
+      sendProgressInfo(job);
     }
 
     @Override
@@ -1147,6 +1156,8 @@ public class NotebookServer extends WebSocketServlet implements
       }
 
       if (job.isTerminated()) {
+        // send final progress report
+        sendProgressInfo(job);
         LOG.info("Job {} is finished", job.getId());
         try {
           //TODO(khalid): may change interface for JobListener and pass subject from interpreter
@@ -1276,4 +1287,3 @@ public class NotebookServer extends WebSocketServlet implements
     }
   }
 }
-

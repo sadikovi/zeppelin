@@ -40,10 +40,13 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.SparkEnv;
 
 import org.apache.spark.SecurityManager;
+import org.apache.spark.SparkFirehoseListener;
 import org.apache.spark.repl.SparkILoop;
 import org.apache.spark.scheduler.ActiveJob;
 import org.apache.spark.scheduler.DAGScheduler;
 import org.apache.spark.scheduler.Pool;
+import org.apache.spark.scheduler.SparkListenerEvent;
+import org.apache.spark.scheduler.SparkListenerJobStart;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.ui.jobs.JobProgressListener;
 import org.apache.zeppelin.interpreter.Interpreter;
@@ -54,6 +57,7 @@ import org.apache.zeppelin.interpreter.InterpreterResult.Code;
 import org.apache.zeppelin.interpreter.InterpreterUtils;
 import org.apache.zeppelin.interpreter.WrappedInterpreter;
 import org.apache.zeppelin.interpreter.thrift.InterpreterCompletion;
+import org.apache.zeppelin.interpreter.thrift.InterpreterProgressInfo;
 import org.apache.zeppelin.scheduler.Scheduler;
 import org.apache.zeppelin.scheduler.SchedulerFactory;
 import org.apache.zeppelin.spark.dep.SparkDependencyContext;
@@ -184,7 +188,16 @@ public class SparkInterpreter extends Interpreter {
       if (addListenerMethod != null) {
         addListenerMethod.invoke(listenerBus, pl);
         if (jobTable != null) {
-          addListenerMethod.invoke(listenerBus, jobTable);
+          addListenerMethod.invoke(listenerBus, new org.apache.spark.SparkFirehoseListener() {
+            @Override
+            public void onEvent(SparkListenerEvent event) {
+              if (event instanceof SparkListenerJobStart) {
+                SparkListenerJobStart jobStart = (SparkListenerJobStart) event;
+                String jobGroup = (String) jobStart.properties().get("spark.jobGroup.id");
+                jobTable.addJob(jobGroup, jobStart);
+              }
+            }
+          });
         } else {
           logger.warn("Could not add job table as null");
         }
@@ -1098,7 +1111,6 @@ public class SparkInterpreter extends Interpreter {
       jobTable.reset(jobGroup);
       InterpreterResult r = interpretInput(lines, context);
       sc.clearJobGroup();
-      logger.info("Job information for result: {}", jobTable.get(jobGroup));
       return r;
     }
   }
@@ -1196,6 +1208,17 @@ public class SparkInterpreter extends Interpreter {
   @Override
   public void cancel(InterpreterContext context) {
     sc.cancelJobGroup(getJobGroup(context));
+  }
+
+  @Override
+  public List<InterpreterProgressInfo> getProgressInfo(InterpreterContext context) {
+    List<InterpreterProgressInfo> list = new ArrayList<InterpreterProgressInfo>();
+    String jobGroup = getJobGroup(context);
+    for (SparkListenerJob job: jobTable.getJobs(jobGroup)) {
+      list.add(new InterpreterProgressInfo(
+        job.getJobName(), job.getJobDescription(), job.getJobUIAddress()));
+    }
+    return list;
   }
 
   @Override
