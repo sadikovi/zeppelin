@@ -45,7 +45,7 @@ class SparkListenerJob(jobStart: SparkListenerJobStart, uiAddress: String) exten
   def getJobName(): String = s"Job $jobId"
 
   def getJobDescription(): String = {
-    stageIds.map { stageId => s"Stage $stageId" }.mkString("\n")
+    s"Stages ${stageIds.sortWith(_ < _).mkString("[", ", ", "]")}"
   }
 
   override def toString(): String = {
